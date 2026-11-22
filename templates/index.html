@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberNova Solutions v4.0 | Autonomous Multi-Agent & Real-Time Email 2FA</title>
+  <style>
+    :root {
+      --bg: #070d19;
+      --panel: #0e172a;
+      --panel2: #131f38;
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --cyan: #06b6d4;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --indigo: #6366f1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; }
+    .topbar {
+      background: #050912; border-bottom: 1px solid var(--border);
+      padding: 8px 24px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; flex-wrap: wrap; gap: 8px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); display: inline-block; margin-right: 6px; }
+    .navbar {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+      position: sticky; top: 0; z-index: 40;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo { background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #fff; font-weight: 800; padding: 8px 11px; border-radius: 8px; }
+    .nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s;
+    }
+    .nav-btn.active, .nav-btn:hover { background: rgba(6, 182, 212, 0.14); border-color: var(--cyan); color: #fff; }
+    .btn {
+      background: var(--cyan); color: #04101a; border: none; padding: 9px 16px; border-radius: 8px;
+      font-weight: 700; cursor: pointer; font-size: 13px; transition: 0.2s;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-emerald { background: var(--emerald); color: #03150e; }
+    .btn-rose { background: var(--rose); color: #fff; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+    .hero {
+      background: linear-gradient(135deg, #0c182e 0%, #111d38 100%);
+      border: 1px solid var(--border); border-radius: 16px; padding: 28px;
+      display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-bottom: 24px;
+    }
+    @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } }
+    .badge {
+      display: inline-block; background: rgba(6, 182, 212, 0.15); color: var(--cyan);
+      border: 1px solid rgba(6, 182, 212, 0.35); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 12px;
+    }
+    h1 { font-size: 32px; line-height: 1.2; margin-bottom: 12px; }
+    h1 span { color: var(--cyan); }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .card-sub { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    input, select, textarea {
+      width: 100%; background: #080f1e; border: 1px solid var(--border); color: var(--text);
+      padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 6px; margin-bottom: 12px;
+    }
+    label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .pill { padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .pill-cyan { background: rgba(6,182,212,0.18); color: var(--cyan); }
+    .pill-emerald { background: rgba(16,185,129,0.18); color: var(--emerald); }
+    .pill-amber { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .pill-rose { background: rgba(244,63,94,0.18); color: var(--rose); }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(2,6,15,0.82); display: none;
+      align-items: center; justify-content: center; z-index: 100; padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+      width: 100%; max-width: 500px; padding: 24px; max-height: 92vh; overflow-y: auto;
+    }
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; background: #0f172a; border-left: 4px solid var(--cyan);
+      color: #fff; padding: 14px 18px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 200; max-width: 420px; display: none; font-size: 13px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <span class="dot"></span> <b>CyberNova v4.0 Autonomous Multi-Agent Mesh</b> &nbsp;|&nbsp;
+      <span id="smtpBadge" class="pill pill-amber">Gmail SMTP: Checking...</span>
+    </div>
+    <div id="authStatus">Guest Mode &mdash; Register with Real Gmail for Live Inbox 2FA</div>
+  </div>
+
+  <div class="navbar">
+    <div class="brand">
+      <div class="logo">CN</div>
+      <div>
+        <div style="font-weight:800;font-size:16px;">CyberNova Solutions <span class="pill pill-cyan">v4.0 Agentic</span></div>
+        <div style="font-size:11px;color:var(--muted);">Multi-Agent Cybersecurity Store &amp; Real-Time SOC</div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="switchTab('marketplace', this)">Marketplace</button>
+      <button class="nav-btn" onclick="switchTab('agents', this)">Agentic AI Center (4 Agents)</button>
+      <button class="nav-btn" onclick="switchTab('risk', this)">AI Risk Analyzer</button>
+      <button class="nav-btn" onclick="switchTab('chat', this)">AI &amp; Expert Chat</button>
+      <button class="nav-btn" onclick="switchTab('vault', this)">Vault, Verify &amp; SDK</button>
+      <a href="/dashboard/user" class="nav-btn" style="text-decoration:none;color:var(--cyan);border-color:rgba(6,182,212,0.3);">👤 User Portal</a>
+      <a href="/dashboard/consultant" class="nav-btn" style="text-decoration:none;color:var(--indigo);border-color:rgba(99,102,241,0.3);">🛡️ Consultant Desk</a>
+      <a href="/dashboard/admin" class="nav-btn" style="text-decoration:none;color:var(--rose);border-color:rgba(244,63,94,0.3);">🚨 Admin SOC</a>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-outline" onclick="openModal('mailModal')">Real-Time Mail (<span id="mailCount">0</span>)</button>
+      <button class="btn btn-outline" onclick="openModal('cartModal')">Cart (<span id="cartCount">0</span>)</button>
+      <button class="btn" id="authBtn" onclick="handleAuthBtn()">Register / Sign In</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- TAB 1: MARKETPLACE -->
+    <div id="tab-marketplace" class="section active">
+      <div class="hero">
+        <div>
+          <div class="badge">Autonomous Multi-Agent Architecture &bull; Real-Time Gmail 2FA</div>
+          <h1>Next-Gen <span>Agentic AI</span> Cybersecurity &amp; Autonomous Defense</h1>
+          <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:18px;">
+            Every actor in CyberNova v4.0 is backed by an autonomous AI agent: <b>Posture Auditor Agent</b> for enterprise users,
+            <b>Fraud Investigation Agent</b> for checkouts, <b>SOC Responder Agent</b> for threat containment, and <b>License Watchdog Agent</b> for live SDK telemetry.
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn" onclick="openModal('mailModal')">1. Connect Real Gmail SMTP</button>
+            <button class="btn btn-emerald" onclick="handleAuthBtn()">2. Register Real Email + 2FA</button>
+          </div>
+        </div>
+        <div class="grid-4" style="grid-template-columns:1fr 1fr;">
+          <div class="card-sub">
+            <div style="font-size:11px;color:var(--muted);">USER ACTOR AGENT</div>
+            <div style="font-weight:700;color:var(--cyan);margin-top:4px;">Posture Auditor</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">NIST/ISO Scan + CISO PDF</div>
+          </div>
+          <div class="card-sub">
+            <div style="font-size:11px;color:var(--muted);">CHECKOUT AGENT</div>
+            <div style="font-weight:700;color:var(--amber);margin-top:4px;">Fraud Investigator</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Z-Score &amp; Crypto HITL</div>
+          </div>
+          <div class="card-sub">
+            <div style="font-size:11px;color:var(--muted);">ADMIN SOC AGENT</div>
+            <div style="font-weight:700;color:var(--rose);margin-top:4px;">SOC Responder</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">AI Firewall &amp; Isolation</div>
+          </div>
+          <div class="card-sub">
+            <div style="font-size:11px;color:var(--muted);">SDK NODE AGENT</div>
+            <div style="font-weight:700;color:var(--emerald);margin-top:4px;">License Watchdog</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Root-CA &amp; Heartbeats</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom:12px;">AI-Recommended Security Stack (Tailored to Score: <span id="heroScore">65</span>/100)</h3>
+      <div id="recGrid" class="grid-3" style="margin-bottom:26px;"></div>
+
+      <h3 style="margin-bottom:12px;">Enterprise Cybersecurity Software Catalog</h3>
+      <div id="productGrid" class="grid-3"></div>
+    </div>
+
+    <!-- TAB 2: AGENTIC AI COMMAND CENTER -->
+    <div id="tab-agents" class="section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>Autonomous Multi-Agent Orchestration Center</h2>
+          <p style="color:var(--muted);font-size:13px;">4 actor-specialized AI agents with autonomous tool calling, inter-agent handoffs, and real-time execution traces.</p>
+        </div>
+        <button class="btn" onclick="loadBootstrap()">Refresh Agent Telemetry</button>
+      </div>
+      <div id="agentCardsGrid" class="grid-2" style="margin-bottom:24px;"></div>
+
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Live Multi-Agent Execution &amp; Handoff Trace Feed</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Autonomous Agent</th>
+                <th>Actor Trigger</th>
+                <th>Tools Invoked</th>
+                <th>Verdict &amp; Handoff</th>
+                <th>Reasoning Summary</th>
+              </tr>
+            </thead>
+            <tbody id="agentFeedBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: AI RISK ANALYZER -->
+    <div id="tab-risk" class="section">
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-bottom:8px;">Posture &amp; Compliance Auditor Agent</h3>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">Evaluates organizational controls, generates ReportLab CISO PDFs, and escalates critical exposure (&lt;50) to SOC Responder Agent.</p>
+          <label><input type="checkbox" id="chkFirewall" checked style="width:auto;margin-right:8px;"> Next-Gen Perimeter Firewall Active</label><br/>
+          <label><input type="checkbox" id="chkMfa" checked style="width:auto;margin-right:8px;"> Organization-Wide 2FA Enforced</label><br/>
+          <label><input type="checkbox" id="chkEnc" checked style="width:auto;margin-right:8px;"> AES-256 Endpoint Encryption Active</label><br/>
+          <label><input type="checkbox" id="chkSiem" style="width:auto;margin-right:8px;"> 24/7 SIEM Telemetry Streaming</label><br/>
+          <label>Patch Management Cadence</label>
+          <select id="patchCadence">
+            <option>Weekly Automated</option>
+            <option>Monthly Scheduled</option>
+            <option>Rarely / Manual</option>
+          </select>
+          <label><input type="checkbox" id="chkEmailPdf" checked style="width:auto;margin-right:8px;"> Dispatch CISO PDF Report to My Real Email</label>
+          <div style="display:flex;gap:10px;margin-top:14px;">
+            <button class="btn" onclick="runRiskScan()">Run Autonomous Posture Scan</button>
+            <button class="btn btn-emerald" onclick="downloadCisoPdf()">Download CISO PDF</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Real-Time Posture &amp; Threat Output</h3>
+          <div id="riskOutput" style="margin-top:14px;color:var(--muted);font-size:13px;">
+            Click <b>Run Autonomous Posture Scan</b> to invoke the Posture &amp; Compliance Auditor Agent.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: AI & EXPERT CHAT -->
+    <div id="tab-chat" class="section">
+      <div class="card" style="max-width:860px;margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <h3>Control-Grounded AI Advisor &amp; AI Firewall Guardrail</h3>
+            <div style="font-size:12px;color:var(--muted);">Protected in real time by Autonomous SOC Responder Agent against prompt-injection attacks.</div>
+          </div>
+          <span class="pill pill-emerald">AI Firewall Armed</span>
+        </div>
+        <div id="chatBox" style="height:320px;overflow-y:auto;background:#080f1e;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:10px;">
+          <input id="chatInput" placeholder="Ask about ransomware, phishing, NIST controls, or test 'Ignore all previous instructions'..." style="margin:0;" onkeydown="if(event.key==='Enter')sendChat()" />
+          <button class="btn" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: VAULT, VERIFY & SDK -->
+    <div id="tab-vault" class="section">
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card">
+          <h3>Cryptographic License Certificate Verifier</h3>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">Handled by <b>License &amp; Telemetry Watchdog Agent</b> (Root-CA HMAC-SHA256).</p>
+          <input id="verifyCertInput" placeholder="Paste cnv1.<payload>.<sig> certificate token..." />
+          <button class="btn" onclick="verifyCert()">Verify Root-CA Signature</button>
+          <div id="verifyResult" style="margin-top:12px;font-size:13px;"></div>
+        </div>
+        <div class="card">
+          <h3>Live Agent Telemetry Heartbeat SDK</h3>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">Streams endpoint threat blocks to Watchdog Agent to dynamically boost posture score (+3).</p>
+          <label>Active License Key</label>
+          <input id="hbLicense" value="CNOVA-9F4A-72C1-E80B" />
+          <label>Agent Host Node</label>
+          <input id="hbHost" value="prod-lab-server-01" />
+          <button class="btn btn-emerald" onclick="sendHeartbeat()">Send Live Heartbeat</button>
+          <div id="hbResult" style="margin-top:12px;font-size:13px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Your Cryptographically Signed Licenses &amp; Order History</h3>
+        <div id="vaultList" style="color:var(--muted);font-size:13px;">Sign in to view your provisioned licenses and orders.</div>
+      </div>
+    </div>
+
+    <!-- TAB 6: ADMIN SOC -->
+    <div id="tab-soc" class="section">
+      <div id="socKpis" class="grid-4" style="margin-bottom:20px;"></div>
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:12px;">Order Processing &amp; HITL AI Fraud Triage Queue</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Buyer</th>
+                <th>Amount / Rail</th>
+                <th>AI Fraud Score</th>
+                <th>Status</th>
+                <th>HITL Decision</th>
+              </tr>
+            </thead>
+            <tbody id="socOrdersBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Live OWASP Security, Telemetry &amp; AI Firewall Logs</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Event</th><th>Actor</th><th>Severity</th><th>Detail</th></tr>
+            </thead>
+            <tbody id="socLogsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL (DEFAULTS TO REAL-TIME REGISTRATION WITH REAL EMAIL 2FA) -->
+  <div id="authModal" class="modal-backdrop">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 id="authModalTitle">Real-Time Email Registration &amp; Zero-Trust Sign In</h3>
+        <button class="btn btn-outline" onclick="closeModal('authModal')">X</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="btn btn-emerald" style="flex:1;" onclick="toggleAuthMode('register')">Create Real-Time Account</button>
+        <button class="btn btn-outline" style="flex:1;" onclick="toggleAuthMode('login')">Sign In</button>
+      </div>
+
+      <div id="registerPane">
+        <label>Full Name</label>
+        <input id="regName" value="Hifza Kanwal" />
+        <label>Your Real Gmail Address (Receives Live 2FA OTP &amp; CISO Reports)</label>
+        <input id="regEmail" placeholder="Enter your real Gmail address..." />
+        <label>Organization</label>
+        <input id="regOrg" value="CyberNova Enterprise" />
+        <label>Password (Min 6 chars)</label>
+        <input id="regPass" type="password" placeholder="Create strong password..." />
+        <label><input type="checkbox" id="reg2fa" checked style="width:auto;margin-right:6px;"> Send 2-Step Verification (6-Digit OTP) to My Real Email</label>
+        <button class="btn btn-emerald" style="width:100%;margin-top:8px;" onclick="submitRegister()">Register &amp; Send 2FA OTP to Email</button>
+      </div>
+
+      <div id="loginPane" style="display:none;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Select Role Workspace to Pre-Fill:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn btn-outline" style="font-size:11px;padding:6px 10px;border-color:var(--cyan);" onclick="fillDemo('hifza@cybernova.io','Cyber@123','user')">👤 User (Hifza)</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:6px 10px;border-color:var(--indigo);" onclick="fillDemo('consultant@cybernova.io','Consult@123','consultant')">🛡️ SOC Consultant</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:6px 10px;border-color:var(--rose);" onclick="fillDemo('admin@cybernova.io','Admin@123','admin')">🚨 Admin + 2FA</button>
+        </div>
+        <div id="roleTargetHint" style="font-size:11px;color:var(--cyan);margin-bottom:8px;">Authenticates into: User Dashboard (/dashboard/user)</div>
+        <label>Email Address</label>
+        <input id="loginEmail" placeholder="Enter your registered email..." />
+        <label>Password</label>
+        <input id="loginPass" type="password" placeholder="Enter password..." />
+        <button class="btn" style="width:100%;" onclick="submitLogin()">Sign In &amp; Send 2FA OTP</button>
+      </div>
+
+      <div id="otpPane" style="display:none;">
+        <div class="card-sub" style="margin-bottom:12px;">
+          <div style="color:var(--emerald);font-weight:700;">2-Step Verification OTP Dispatched!</div>
+          <div id="otpHint" style="font-size:12px;color:var(--muted);margin-top:4px;"></div>
+        </div>
+        <label>Enter 6-Digit OTP Code from Your Email</label>
+        <input id="otpInput" maxlength="6" placeholder="123456" style="font-size:20px;letter-spacing:6px;text-align:center;" />
+        <button class="btn btn-emerald" style="width:100%;" onclick="submit2FA()">Verify 2FA &amp; Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REAL-TIME MAIL & GMAIL SMTP CONFIGURATION MODAL -->
+  <div id="mailModal" class="modal-backdrop">
+    <div class="modal" style="max-width:620px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3>Real-Time Gmail SMTP Configuration &amp; Live Outbox</h3>
+        <button class="btn btn-outline" onclick="closeModal('mailModal')">X</button>
+      </div>
+      <div class="card-sub" style="margin-bottom:14px;font-size:12px;line-height:1.5;">
+        <b>How to send real 2FA OTPs to your Gmail inbox:</b><br/>
+        1. Open <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--cyan);">myaccount.google.com/apppasswords</a> and generate a 16-character App Password.<br/>
+        2. Enter your Gmail and that 16-character App Password below (or save it in the <span class="mono">.env</span> file).
+      </div>
+      <div class="grid-2" style="grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label>Your Real Gmail Address</label>
+          <input id="smtpUser" placeholder="yourname@gmail.com" />
+        </div>
+        <div>
+          <label>Google 16-Char App Password</label>
+          <input id="smtpPass" type="password" placeholder="xxxx xxxx xxxx xxxx" />
+        </div>
+      </div>
+      <button class="btn btn-emerald" onclick="saveSmtp()">Connect Real-Time Gmail SMTP &amp; Send Test Mail</button>
+      <h4 style="margin-top:18px;margin-bottom:8px;">Live Dispatched Email Outbox</h4>
+      <div id="mailOutboxList" style="max-height:240px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- CART MODAL -->
+  <div id="cartModal" class="modal-backdrop">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3>Encrypted Checkout Cart</h3>
+        <button class="btn btn-outline" onclick="closeModal('cartModal')">X</button>
+      </div>
+      <div id="cartItemsList" style="margin-bottom:12px;font-size:13px;"></div>
+      <label>Payment Rail</label>
+      <select id="payMethod">
+        <option value="Card">Encrypted Credit / Debit Card (TLS 1.3)</option>
+        <option value="Crypto">Cryptocurrency (USDT / BTC / ETH)</option>
+      </select>
+      <button class="btn btn-emerald" style="width:100%;" onclick="submitCheckout()">Complete Secure Purchase</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let STATE = {
+      token: localStorage.getItem('cn_v5_token') || localStorage.getItem('cn_v4_token') || '',
+      csrf: localStorage.getItem('cn_v5_csrf') || localStorage.getItem('cn_v4_csrf') || '',
+      user: null,
+      products: [],
+      cart: [],
+      challengeId: '',
+      dashboard_url: ''
+    };
+
+    function showToast(msg, color='var(--cyan)') {
+      const t = document.getElementById('toast');
+      t.style.borderLeftColor = color;
+      t.innerHTML = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 5500);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+      if (id === 'mailModal') loadMailOutbox();
+      if (id === 'cartModal') renderCart();
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function switchTab(name, btn) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      if (btn) btn.classList.add('active');
+      if (name === 'vault') loadVault();
+      if (name === 'soc') loadSoc();
+      if (name === 'chat') loadChat();
+      if (name === 'agents') loadBootstrap();
+    }
+
+    async function api(path, method='GET', body=null) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (STATE.token) headers['Authorization'] = 'Bearer ' + STATE.token;
+      if (STATE.csrf) headers['X-CSRF-Token'] = STATE.csrf;
+      const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : null });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Request failed' }));
+        throw new Error(err.detail || 'Error');
+      }
+      return res.json();
+    }
+
+    async function loadBootstrap() {
+      const data = await api('/api/bootstrap');
+      STATE.user = data.user;
+      STATE.products = data.products;
+      STATE.dashboard_url = data.dashboard_url || '';
+      updateAuthUI();
+      renderProducts(data.recommendations, 'recGrid', true);
+      renderProducts(data.products, 'productGrid', false);
+      renderAgents(data.agent_registry, data.recent_agent_executions);
+      document.getElementById('mailCount').innerText = data.recent_emails.length;
+
+      const badge = document.getElementById('smtpBadge');
+      if (data.smtp_status.configured) {
+        badge.className = 'pill pill-emerald';
+        badge.innerText = 'Real Gmail SMTP: ACTIVE (' + data.smtp_status.smtp_user + ')';
+        if (!document.getElementById('smtpUser').value) document.getElementById('smtpUser').value = data.smtp_status.smtp_user;
+        if (!document.getElementById('regEmail').value) document.getElementById('regEmail').value = data.smtp_status.smtp_user;
+      } else {
+        badge.className = 'pill pill-amber';
+        badge.innerText = 'Gmail SMTP: Click Real-Time Mail to Connect';
+      }
+    }
+
+    function updateAuthUI() {
+      const st = document.getElementById('authStatus');
+      const btn = document.getElementById('authBtn');
+      if (STATE.user) {
+        const dashUrl = STATE.dashboard_url || (STATE.user.role === 'admin' ? '/dashboard/admin' : (STATE.user.role === 'consultant' ? '/dashboard/consultant' : '/dashboard/user'));
+        st.innerHTML = `Signed in as <b>${STATE.user.full_name}</b> (${STATE.user.email}) <span class="pill pill-cyan">${STATE.user.role.toUpperCase()}</span> <a href="${dashUrl}" class="btn btn-emerald btn-sm" style="margin-left:10px;text-decoration:none;display:inline-block;padding:3px 9px;font-size:11px;">Open ${STATE.user.role.toUpperCase()} Dashboard &rarr;</a>`;
+        btn.innerText = 'Logout';
+        document.getElementById('heroScore').innerText = STATE.user.security_score;
+      } else {
+        st.innerHTML = 'Guest Mode &mdash; Register with Real Gmail for Live Inbox 2FA';
+        btn.innerText = 'Register / Sign In';
+        document.getElementById('heroScore').innerText = '65';
+      }
+    }
+
+    function handleAuthBtn() {
+      if (STATE.user) {
+        STATE.token = ''; STATE.csrf = ''; STATE.user = null;
+        localStorage.removeItem('cn_v4_token'); localStorage.removeItem('cn_v4_csrf');
+        localStorage.removeItem('cn_v5_token'); localStorage.removeItem('cn_v5_csrf');
+        updateAuthUI();
+        showToast('Signed out cleanly.');
+      } else {
+        toggleAuthMode('register');
+        openModal('authModal');
+      }
+    }
+
+    function toggleAuthMode(mode) {
+      document.getElementById('registerPane').style.display = mode === 'register' ? 'block' : 'none';
+      document.getElementById('loginPane').style.display = mode === 'login' ? 'block' : 'none';
+      document.getElementById('otpPane').style.display = 'none';
+    }
+
+    function fillDemo(e, p, role='user') {
+      document.getElementById('loginEmail').value = e;
+      document.getElementById('loginPass').value = p;
+      const hint = document.getElementById('roleTargetHint');
+      if (hint) {
+        const targetDash = role === 'admin' ? 'Admin SOC Command Center (/dashboard/admin)' : (role === 'consultant' ? 'SOC Consultant Workstation (/dashboard/consultant)' : 'User Security Dashboard (/dashboard/user)');
+        const color = role === 'admin' ? 'var(--rose)' : (role === 'consultant' ? 'var(--indigo)' : 'var(--cyan)');
+        hint.style.color = color;
+        hint.innerText = `Authenticates into: ${targetDash}`;
+      }
+    }
+
+    async function submitLogin() {
+      try {
+        const res = await api('/api/auth/login', 'POST', {
+          email: document.getElementById('loginEmail').value,
+          password: document.getElementById('loginPass').value
+        });
+        if (res.requires_2fa) {
+          STATE.challengeId = res.challenge_id;
+          document.getElementById('loginPane').style.display = 'none';
+          document.getElementById('otpPane').style.display = 'block';
+          const otpLine = res.otp_preview ? `<br/><b>Relay OTP:</b> <span class="mono">${res.otp_preview}</span>` : `<br/><b>Check your real Gmail inbox for the 6-digit OTP!</b>`;
+          document.getElementById('otpHint').innerHTML = `${res.message}<br/><b>Status:</b> ${res.email_delivery.delivery_mode}${otpLine}`;
+          document.getElementById('otpInput').value = res.otp_preview || '';
+          showToast(res.message, 'var(--emerald)');
+        } else {
+          STATE.token = res.token; STATE.csrf = res.csrf_token;
+          localStorage.setItem('cn_v4_token', res.token); localStorage.setItem('cn_v4_csrf', res.csrf_token);
+          localStorage.setItem('cn_v5_token', res.token); localStorage.setItem('cn_v5_csrf', res.csrf_token);
+          closeModal('authModal');
+          await loadBootstrap();
+          const targetUrl = res.dashboard_url || (res.user.role === 'admin' ? '/dashboard/admin' : (res.user.role === 'consultant' ? '/dashboard/consultant' : '/dashboard/user'));
+          showToast(`Authenticated: ${res.user.full_name} — Redirecting to ${res.user.role.toUpperCase()} Dashboard...`, 'var(--emerald)');
+          setTimeout(() => { window.location.href = targetUrl; }, 700);
+        }
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function submitRegister() {
+      try {
+        const res = await api('/api/auth/register', 'POST', {
+          full_name: document.getElementById('regName').value,
+          email: document.getElementById('regEmail').value,
+          organization: document.getElementById('regOrg').value,
+          password: document.getElementById('regPass').value,
+          two_fa_enabled: document.getElementById('reg2fa').checked
+        });
+        if (res.requires_2fa) {
+          STATE.challengeId = res.challenge_id;
+          document.getElementById('registerPane').style.display = 'none';
+          document.getElementById('otpPane').style.display = 'block';
+          const otpLine = res.otp_preview ? `<br/><b>Relay OTP:</b> <span class="mono">${res.otp_preview}</span>` : `<br/><b>Check your real Gmail inbox for the 6-digit OTP!</b>`;
+          document.getElementById('otpHint').innerHTML = `${res.message}<br/><b>Status:</b> ${res.email_delivery.delivery_mode}${otpLine}`;
+          document.getElementById('otpInput').value = res.otp_preview || '';
+          showToast(res.message, 'var(--emerald)');
+        } else {
+          STATE.token = res.token; STATE.csrf = res.csrf_token;
+          localStorage.setItem('cn_v4_token', res.token); localStorage.setItem('cn_v4_csrf', res.csrf_token);
+          localStorage.setItem('cn_v5_token', res.token); localStorage.setItem('cn_v5_csrf', res.csrf_token);
+          closeModal('authModal');
+          await loadBootstrap();
+          const targetUrl = res.dashboard_url || '/dashboard/user';
+          showToast(`Account created! Redirecting to User Dashboard...`, 'var(--emerald)');
+          setTimeout(() => { window.location.href = targetUrl; }, 700);
+        }
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function submit2FA() {
+      try {
+        const res = await api('/api/auth/verify-2fa', 'POST', {
+          challenge_id: STATE.challengeId,
+          otp_code: document.getElementById('otpInput').value
+        });
+        STATE.token = res.token; STATE.csrf = res.csrf_token;
+        localStorage.setItem('cn_v4_token', res.token); localStorage.setItem('cn_v4_csrf', res.csrf_token);
+        localStorage.setItem('cn_v5_token', res.token); localStorage.setItem('cn_v5_csrf', res.csrf_token);
+        closeModal('authModal');
+        await loadBootstrap();
+        const targetUrl = res.dashboard_url || (res.user.role === 'admin' ? '/dashboard/admin' : (res.user.role === 'consultant' ? '/dashboard/consultant' : '/dashboard/user'));
+        showToast(`2-Step Verification Passed! Launching ${res.user.role.toUpperCase()} Dashboard...`, 'var(--emerald)');
+        setTimeout(() => { window.location.href = targetUrl; }, 700);
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    function renderProducts(list, containerId, isRec) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = list.map(p => `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span class="pill pill-cyan">${isRec ? p.ai_match + '% AI Match' : p.category}</span>
+            <span class="pill pill-emerald">${p.security_level}</span>
+          </div>
+          <h4 style="margin-bottom:6px;">${p.name}</h4>
+          <p style="color:var(--muted);font-size:12px;line-height:1.5;margin-bottom:12px;">${p.description}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><b>$${p.price.toFixed(2)}</b> <span style="font-size:11px;color:var(--muted);">/ ${p.license_term}</span></div>
+            <button class="btn" onclick="addToCart(${p.id})">+ Add to Cart</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAgents(registry, executions) {
+      document.getElementById('agentCardsGrid').innerHTML = registry.map(a => `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span class="pill pill-cyan">Actor: ${a.actor}</span>
+            <span class="pill pill-emerald">AUTONOMOUS ACTIVE</span>
+          </div>
+          <h4 style="margin-bottom:6px;">${a.name}</h4>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">${a.mission}</p>
+          <div class="mono" style="color:var(--cyan);">Tools: ${a.autonomous_tools.join(' | ')}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('agentFeedBody').innerHTML = executions.map(ex => `
+        <tr>
+          <td class="mono">${ex.created_at}</td>
+          <td><b>${ex.agent_name}</b></td>
+          <td>${ex.actor}<br/><span class="pill pill-cyan">${ex.trigger_event}</span></td>
+          <td class="mono">${JSON.parse(ex.tools_invoked).join(', ')}</td>
+          <td><span class="pill pill-emerald">${ex.verdict}</span><br/><span style="font-size:11px;color:var(--amber);">Handoff: ${ex.handoff_target}</span></td>
+          <td style="font-size:12px;color:var(--muted);">${ex.reasoning_summary}</td>
+        </tr>
+      `).join('');
+    }
+
+    function addToCart(pid) {
+      const found = STATE.cart.find(x => x.product_id === pid);
+      if (found) found.quantity += 1;
+      else STATE.cart.push({ product_id: pid, quantity: 1 });
+      document.getElementById('cartCount').innerText = STATE.cart.reduce((s, x) => s + x.quantity, 0);
+      showToast('Added module to encrypted cart.');
+    }
+
+    function renderCart() {
+      const el = document.getElementById('cartItemsList');
+      if (!STATE.cart.length) { el.innerHTML = 'Your cart is empty.'; return; }
+      let total = 0;
+      el.innerHTML = STATE.cart.map(c => {
+        const p = STATE.products.find(x => x.id === c.product_id);
+        const sub = p.price * c.quantity;
+        total += sub;
+        return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+          <span>${p.name} (x${c.quantity})</span><b>$${sub.toFixed(2)}</b>
+        </div>`;
+      }).join('') + `<div style="margin-top:10px;text-align:right;font-size:15px;">Total: <b>$${total.toFixed(2)}</b></div>`;
+    }
+
+    async function submitCheckout() {
+      if (!STATE.user) { closeModal('cartModal'); openModal('authModal'); showToast('Please register or sign in first.', 'var(--amber)'); return; }
+      try {
+        const res = await api('/api/orders/checkout', 'POST', {
+          items: STATE.cart,
+          payment_method: document.getElementById('payMethod').value
+        });
+        STATE.cart = [];
+        document.getElementById('cartCount').innerText = '0';
+        closeModal('cartModal');
+        await loadBootstrap();
+        if (res.fraud_evaluation.flagged) {
+          showToast(`Fraud Investigation Agent quarantined ${res.order_code} (Score ${res.fraud_evaluation.fraud_score}/100) for Admin HITL!`, 'var(--amber)');
+        } else {
+          showToast(`Order ${res.order_code} Provisioned! License minted & emailed.`, 'var(--emerald)');
+        }
+        switchTab('vault', document.querySelectorAll('.nav-btn')[4]);
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function runRiskScan() {
+      try {
+        const res = await api('/api/ai/risk-analyzer', 'POST', {
+          firewall_active: document.getElementById('chkFirewall').checked,
+          mfa_enabled: document.getElementById('chkMfa').checked,
+          endpoint_encrypted: document.getElementById('chkEnc').checked,
+          siem_monitoring: document.getElementById('chkSiem').checked,
+          patch_cadence: document.getElementById('patchCadence').value,
+          email_report: document.getElementById('chkEmailPdf').checked
+        });
+        document.getElementById('riskOutput').innerHTML = `
+          <div class="card-sub" style="margin-bottom:12px;">
+            <div style="font-size:26px;font-weight:800;color:var(--cyan);">${res.digital_security_score}/100 &mdash; ${res.risk_tier}</div>
+            <div style="font-size:12px;color:var(--emerald);margin-top:4px;">Agent Trace: ${res.agent_execution.reasoning_summary}</div>
+            ${res.email_delivery ? `<div style="font-size:12px;color:var(--amber);margin-top:4px;">Email Status: ${res.email_delivery.delivery_mode} -> ${res.email_delivery.recipient}</div>` : ''}
+          </div>
+          ${res.threats.map(t => `<div class="card-sub" style="margin-bottom:8px;"><b>${t.vector}</b> (${t.likelihood})<br/><span style="font-size:12px;color:var(--muted);">${t.mitigation}</span></div>`).join('')}
+        `;
+        await loadBootstrap();
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function downloadCisoPdf() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (STATE.token) headers['Authorization'] = 'Bearer ' + STATE.token;
+      const res = await fetch('/api/ai/risk-analyzer/pdf', {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          firewall_active: document.getElementById('chkFirewall').checked,
+          mfa_enabled: document.getElementById('chkMfa').checked,
+          endpoint_encrypted: document.getElementById('chkEnc').checked,
+          siem_monitoring: document.getElementById('chkSiem').checked,
+          patch_cadence: document.getElementById('patchCadence').value
+        })
+      });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'CyberNova_CISO_Security_Audit.pdf'; a.click();
+      showToast('Executive CISO Audit PDF downloaded!', 'var(--emerald)');
+    }
+
+    async function loadVault() {
+      if (!STATE.user) return;
+      const data = await api('/api/vault');
+      const el = document.getElementById('vaultList');
+      el.innerHTML = '<h4>Signed Software Licenses</h4>' + data.licenses.map(l => `
+        <div class="card-sub" style="margin:8px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><b>${l.product_name}</b> (${l.license_term}) &mdash; <span class="mono" style="color:var(--emerald);">${l.license_key}</span></div>
+            <button class="btn" style="padding:5px 10px;font-size:11px;" onclick="document.getElementById('verifyCertInput').value='${l.signed_cert}';verifyCert();">Verify Cert</button>
+          </div>
+          <div class="mono" style="color:var(--muted);word-break:break-all;margin-top:6px;">${l.signed_cert}</div>
+        </div>
+      `).join('') + '<h4 style="margin-top:16px;">Order History &amp; AI Fraud Clearance</h4>' + data.orders.map(o => `
+        <div class="card-sub" style="margin:8px 0;display:flex;justify-content:space-between;">
+          <div><b>${o.order_code}</b> &bull; $${o.total_amount.toFixed(2)} (${o.payment_method})</div>
+          <div><span class="pill ${o.status.includes('Flagged') ? 'pill-rose' : 'pill-emerald'}">${o.status}</span> (Risk: ${o.fraud_score}/100)</div>
+        </div>
+      `).join('');
+    }
+
+    async function verifyCert() {
+      try {
+        const res = await api('/api/licenses/verify', 'POST', { certificate_token: document.getElementById('verifyCertInput').value });
+        document.getElementById('verifyResult').innerHTML = res.valid
+          ? `<div class="card-sub" style="border-color:var(--emerald);color:var(--emerald);"><b>VALID CERTIFICATE:</b> ${res.message}<br/>SKU: ${res.payload.sku} | Holder: ${res.payload.holder} | Expires: ${res.payload.exp}</div>`
+          : `<div class="card-sub" style="border-color:var(--rose);color:var(--rose);"><b>INVALID CERTIFICATE:</b> ${res.message}</div>`;
+        await loadBootstrap();
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function sendHeartbeat() {
+      try {
+        const res = await api('/api/telemetry/heartbeat', 'POST', {
+          license_key: document.getElementById('hbLicense').value,
+          agent_host: document.getElementById('hbHost').value,
+          threats_blocked: 6
+        });
+        document.getElementById('hbResult').innerHTML = `<div class="card-sub" style="border-color:var(--emerald);color:var(--emerald);">Heartbeat Accepted [${res.sku} @ ${res.agent_host}] &mdash; Live Digital Security Score updated to <b>${res.updated_security_score}/100</b>!</div>`;
+        await loadBootstrap();
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function loadChat() {
+      if (!STATE.user) return;
+      const data = await api('/api/chat/history');
+      document.getElementById('chatBox').innerHTML = data.messages.map(m => `
+        <div style="margin-bottom:10px;text-align:${m.sender_role==='user'?'right':'left'};">
+          <div class="card-sub" style="display:inline-block;max-width:82%;text-align:left;white-space:pre-line;">
+            <div style="font-size:10px;color:var(--cyan);margin-bottom:4px;">${m.sender_role.toUpperCase()} &bull; ${m.created_at}</div>
+            ${m.message}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function sendChat() {
+      if (!STATE.user) { openModal('authModal'); return; }
+      const inp = document.getElementById('chatInput');
+      const msg = inp.value.trim();
+      if (!msg) return;
+      inp.value = '';
+      try {
+        await api('/api/chat/send', 'POST', { message: msg, channel: 'ai' });
+        await loadChat();
+      } catch (e) {
+        showToast(e.message, 'var(--rose)');
+        await loadBootstrap();
+      }
+    }
+
+    async function loadSoc() {
+      try {
+        const data = await api('/api/admin/soc');
+        document.getElementById('socKpis').innerHTML = `
+          <div class="card">Total Orders<br/><b style="font-size:24px;">${data.kpis.total_orders}</b></div>
+          <div class="card">Provisioned Revenue<br/><b style="font-size:24px;color:var(--emerald);">$${data.kpis.provisioned_revenue}</b></div>
+          <div class="card">Flagged Fraud Orders<br/><b style="font-size:24px;color:var(--rose);">${data.kpis.flagged_fraud_orders}</b></div>
+          <div class="card">Autonomous Agent Runs<br/><b style="font-size:24px;color:var(--cyan);">${data.kpis.agent_executions_count}</b></div>
+        `;
+        document.getElementById('socOrdersBody').innerHTML = data.orders.map(o => `
+          <tr>
+            <td><b>${o.order_code}</b></td>
+            <td>${o.user_email}</td>
+            <td>$${o.total_amount.toFixed(2)} (${o.payment_method})</td>
+            <td>${o.fraud_score}/100</td>
+            <td><span class="pill ${o.status.includes('Flagged')?'pill-rose':'pill-emerald'}">${o.status}</span></td>
+            <td>
+              <button class="btn btn-emerald" style="padding:4px 8px;font-size:11px;" onclick="decideOrder('${o.order_code}','APPROVE')">Approve</button>
+              <button class="btn btn-rose" style="padding:4px 8px;font-size:11px;" onclick="decideOrder('${o.order_code}','BLOCK')">Block</button>
+            </td>
+          </tr>
+        `).join('');
+        document.getElementById('socLogsBody').innerHTML = data.security_logs.map(l => `
+          <tr><td class="mono">${l.created_at}</td><td><b>${l.event_type}</b></td><td>${l.actor}</td><td>${l.severity}</td><td>${l.detail}</td></tr>
+        `).join('');
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function decideOrder(code, decision) {
+      await api(`/api/admin/orders/${code}/decision`, 'POST', { decision });
+      showToast(`HITL Decision '${decision}' executed for ${code}`, 'var(--emerald)');
+      loadSoc();
+      loadBootstrap();
+    }
+
+    async function saveSmtp() {
+      try {
+        const res = await api('/api/mail/configure', 'POST', {
+          smtp_user: document.getElementById('smtpUser').value,
+          smtp_pass: document.getElementById('smtpPass').value
+        });
+        if (res.test_delivery.smtp_live) {
+          showToast('SUCCESS! Real Gmail SMTP connected & test email delivered to your inbox!', 'var(--emerald)');
+        } else {
+          showToast('SMTP Error: ' + (res.test_delivery.error || 'Check 16-char Google App Password'), 'var(--rose)');
+        }
+        loadMailOutbox();
+        loadBootstrap();
+      } catch (e) { showToast(e.message, 'var(--rose)'); }
+    }
+
+    async function loadMailOutbox() {
+      const data = await api('/api/mail/outbox');
+      document.getElementById('mailOutboxList').innerHTML = data.emails.map(m => `
+        <div class="card-sub" style="margin-bottom:8px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;">
+            <b>${m.subject}</b>
+            <span class="pill ${m.delivery_mode==='REALTIME_SMTP_SENT'?'pill-emerald':'pill-rose'}">${m.delivery_mode}</span>
+          </div>
+          <div style="color:var(--muted);margin-top:4px;">To: ${m.recipient} &bull; ${m.created_at}</div>
+          ${m.error_detail ? `<div style="color:var(--rose);margin-top:4px;">Error: ${m.error_detail}</div>` : ''}
+          <div style="margin-top:4px;">${m.text_preview}</div>
+        </div>
+      `).join('');
+    }
+
+    loadBootstrap();
+    setInterval(loadBootstrap, 6000);
+  </script>
+</body>
+</html>

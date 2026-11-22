@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberNova | User Dashboard</title>
+  <style>
+    :root {
+      --bg: #070d19; --panel: #0e172a; --panel2: #131f38; --border: #1e293b;
+      --text: #e2e8f0; --muted: #94a3b8; --cyan: #06b6d4; --emerald: #10b981;
+      --amber: #f59e0b; --rose: #f43f5e; --indigo: #6366f1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* NAVBAR */
+    .navbar {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 50; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo { background: linear-gradient(135deg, var(--cyan), var(--indigo)); color: #fff; font-weight: 800; padding: 8px 11px; border-radius: 8px; font-size: 15px; }
+    .navbar-title { font-weight: 700; font-size: 15px; }
+    .navbar-right { display: flex; align-items: center; gap: 10px; }
+
+    /* LAYOUT */
+    .app-body { display: flex; flex: 1; min-height: 0; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 220px; background: var(--panel); border-right: 1px solid var(--border);
+      padding: 20px 0; flex-shrink: 0; position: sticky; top: 57px;
+      height: calc(100vh - 57px); overflow-y: auto;
+    }
+    .sidebar-label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; padding: 0 16px; margin-bottom: 6px; letter-spacing: 1px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      cursor: pointer; border-left: 3px solid transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; transition: 0.15s; user-select: none;
+    }
+    .nav-item:hover { background: rgba(6,182,212,0.07); color: var(--text); }
+    .nav-item.active { background: rgba(6,182,212,0.12); border-left-color: var(--cyan); color: #fff; }
+
+    /* MAIN CONTENT */
+    .main-content { flex: 1; overflow-y: auto; padding: 24px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* COMPONENTS */
+    .btn {
+      background: var(--cyan); color: #04101a; border: none; padding: 9px 16px; border-radius: 8px;
+      font-weight: 700; cursor: pointer; font-size: 13px; transition: 0.2s; white-space: nowrap;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-emerald { background: var(--emerald); color: #03150e; }
+    .btn-rose { background: var(--rose); color: #fff; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .card-sub { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+
+    .pill { padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .pill-cyan { background: rgba(6,182,212,0.18); color: var(--cyan); }
+    .pill-emerald { background: rgba(16,185,129,0.18); color: var(--emerald); }
+    .pill-amber { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .pill-rose { background: rgba(244,63,94,0.18); color: var(--rose); }
+    .pill-indigo { background: rgba(99,102,241,0.18); color: var(--indigo); }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 18px; }
+
+    .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+    .kpi-value { font-size: 28px; font-weight: 800; line-height: 1; }
+    .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    input, select, textarea {
+      width: 100%; background: #080f1e; border: 1px solid var(--border); color: var(--text);
+      padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 6px; margin-bottom: 12px;
+    }
+    label { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; background: #0f172a; border-left: 4px solid var(--cyan);
+      color: #fff; padding: 14px 18px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 999; max-width: 420px; display: none; font-size: 13px;
+    }
+
+    /* CHAT */
+    .chat-box { height: 320px; overflow-y: auto; background: #080f1e; border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .chat-msg { margin-bottom: 10px; }
+    .chat-msg.user-msg { text-align: right; }
+    .chat-bubble { display: inline-block; max-width: 82%; text-align: left; white-space: pre-line; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+
+    /* CART SLIDE-IN */
+    .cart-panel {
+      position: fixed; right: -380px; top: 57px; width: 360px; height: calc(100vh - 57px);
+      background: var(--panel); border-left: 1px solid var(--border); padding: 20px;
+      z-index: 100; overflow-y: auto; transition: right 0.3s ease;
+    }
+    .cart-panel.open { right: 0; }
+    .cart-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; display: none; }
+    .cart-overlay.open { display: block; }
+
+    /* GAUGE */
+    .score-gauge { position: relative; width: 160px; height: 160px; margin: 0 auto 16px; }
+    .gauge-circle { width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+    .gauge-bg { background: conic-gradient(var(--cyan) var(--pct), #1e293b 0); }
+
+    /* THREAT ANIMATE */
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); display: inline-block; margin-right: 6px; animation: pulse-dot 1.5s infinite; }
+
+    /* SECTION header */
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .section-title { font-size: 20px; font-weight: 700; }
+
+    /* FLOAT CART BUTTON */
+    .cart-float {
+      position: sticky; top: 10px; float: right; background: var(--cyan); color: #04101a;
+      border: none; padding: 10px 16px; border-radius: 50px; font-weight: 700; cursor: pointer;
+      font-size: 13px; z-index: 10; display: flex; align-items: center; gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="brand">
+    <div class="logo">CN</div>
+    <div class="navbar-title">CyberNova | <span style="color:var(--cyan);">User Dashboard</span></div>
+  </div>
+  <div class="navbar-right">
+    <span id="navUserName" style="font-size:13px;color:var(--muted);">Loading...</span>
+    <span class="pill pill-cyan">USER</span>
+    <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="app-body">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-label" style="margin-top:4px;">Navigation</div>
+    <div class="nav-item active" onclick="switchPanel('overview', this)">🏠 Overview</div>
+    <div class="nav-item" onclick="switchPanel('security', this)">🛡️ Security Score</div>
+    <div class="nav-item" onclick="switchPanel('licenses', this)">📦 My Products & Licenses</div>
+    <div class="nav-item" onclick="switchPanel('marketplace', this)">🛒 Marketplace</div>
+    <div class="nav-item" onclick="switchPanel('chat', this)">💬 AI Security Advisor</div>
+    <div class="nav-item" onclick="switchPanel('ciso', this)">📄 CISO Reports</div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- OVERVIEW PANEL -->
+    <div id="panel-overview" class="panel active">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Overview</div>
+          <div style="font-size:13px;color:var(--muted);">Your Zero-Trust security command center</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadOverview()">↻ Refresh</button>
+      </div>
+
+      <!-- Welcome card -->
+      <div class="card-sub" style="margin-bottom:20px;border-color:rgba(6,182,212,0.3);background:linear-gradient(135deg,rgba(6,182,212,0.08),rgba(99,102,241,0.08));">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:28px;">🛡️</div>
+          <div>
+            <div id="welcomeMsg" style="font-size:16px;font-weight:700;">Welcome back! Your Zero-Trust session is active.</div>
+            <div style="font-size:12px;color:var(--emerald);margin-top:4px;">✓ Zero-Trust Active &bull; ✓ AI Firewall Armed &bull; ✓ Autonomous Agents Monitoring</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid-4" style="margin-bottom:20px;" id="overviewKpis">
+        <div class="kpi-card"><div class="kpi-label">Security Score</div><div class="kpi-value" style="color:var(--cyan);" id="kpiScore">—</div><div class="kpi-sub">Out of 100</div></div>
+        <div class="kpi-card"><div class="kpi-label">Active Licenses</div><div class="kpi-value" style="color:var(--emerald);" id="kpiLicenses">—</div><div class="kpi-sub">Provisioned</div></div>
+        <div class="kpi-card"><div class="kpi-label">Open Orders</div><div class="kpi-value" style="color:var(--amber);" id="kpiOrders">—</div><div class="kpi-sub">Pending Review</div></div>
+        <div class="kpi-card"><div class="kpi-label">Threat Level</div><div class="kpi-value" id="kpiThreat" style="font-size:18px;padding-top:4px;">—</div><div class="kpi-sub" id="kpiThreatSub">Computing...</div></div>
+      </div>
+
+      <!-- Bottom 2-col -->
+      <div class="grid-2">
+        <!-- Live Threat Summary -->
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <span class="live-dot"></span>
+            <h3 style="font-size:14px;">Live Threat Summary</h3>
+          </div>
+          <div id="threatSummary">
+            <div class="card-sub" style="margin-bottom:8px;">
+              <div style="font-weight:700;font-size:13px;">Phishing Campaign Detected</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">Likelihood: HIGH &bull; Vector: Email &bull; NIST: PR.AT-1</div>
+            </div>
+            <div class="card-sub" style="margin-bottom:8px;">
+              <div style="font-weight:700;font-size:13px;">Unpatched Endpoint Exposure</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">Likelihood: MEDIUM &bull; Vector: Software &bull; NIST: RS.MI-3</div>
+            </div>
+            <div class="card-sub">
+              <div style="font-weight:700;font-size:13px;">Lateral Movement Risk</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">Likelihood: LOW &bull; Vector: Network &bull; NIST: DE.AE-5</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Agent Activity -->
+        <div class="card">
+          <h3 style="font-size:14px;margin-bottom:12px;">Recent Agent Activity</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>Event</th>
+                  <th>Verdict</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="agentActivityBody">
+                <tr><td colspan="4" style="color:var(--muted);text-align:center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECURITY SCORE PANEL -->
+    <div id="panel-security" class="panel">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Security Score</div>
+          <div style="font-size:13px;color:var(--muted);">Autonomous Posture & Compliance Auditor Agent</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <!-- Left: Scan form -->
+        <div class="card">
+          <h3 style="margin-bottom:14px;font-size:14px;">Run Posture Scan</h3>
+          <label><input type="checkbox" id="chkFirewall" checked style="width:auto;margin-right:8px;margin-bottom:0;"> Next-Gen Perimeter Firewall Active</label><br/>
+          <label><input type="checkbox" id="chkMfa" checked style="width:auto;margin-right:8px;margin-bottom:0;"> Organization-Wide 2FA Enforced</label><br/>
+          <label><input type="checkbox" id="chkEnc" checked style="width:auto;margin-right:8px;margin-bottom:0;"> AES-256 Endpoint Encryption Active</label><br/>
+          <label><input type="checkbox" id="chkSiem" style="width:auto;margin-right:8px;margin-bottom:0;"> 24/7 SIEM Telemetry Streaming</label><br/>
+          <label style="margin-top:10px;display:block;">Patch Management Cadence</label>
+          <select id="patchCadence">
+            <option>Weekly Automated</option>
+            <option>Monthly Scheduled</option>
+            <option>Rarely / Manual</option>
+          </select>
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <button class="btn" onclick="runRiskScan()" style="flex:1;">▶ Run Posture Scan</button>
+            <button class="btn btn-emerald" onclick="downloadCisoPdf()" style="flex:1;">↓ CISO PDF</button>
+          </div>
+        </div>
+
+        <!-- Right: Score display + output -->
+        <div class="card">
+          <div style="text-align:center;margin-bottom:16px;">
+            <div id="scoreGaugeVal" style="font-size:64px;font-weight:900;color:var(--cyan);line-height:1;">—</div>
+            <div style="font-size:14px;color:var(--muted);">/ 100</div>
+            <div id="scoreTierBadge" class="pill pill-cyan" style="margin-top:8px;font-size:13px;">—</div>
+          </div>
+          <div id="securityOutput" style="font-size:13px;color:var(--muted);">
+            Run a posture scan to see your real-time threat analysis and security posture tier.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY PRODUCTS & LICENSES PANEL -->
+    <div id="panel-licenses" class="panel">
+      <div class="section-header">
+        <div class="section-title">My Products & Licenses</div>
+        <button class="btn btn-outline btn-sm" onclick="loadLicenses()">↻ Refresh</button>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <h3 style="font-size:14px;margin-bottom:12px;">Signed Licenses</h3>
+        <div id="licenseCards" class="grid-3">
+          <div class="card-sub" style="color:var(--muted);font-size:13px;">Loading licenses...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:14px;margin-bottom:12px;">Order History</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Order Code</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Fraud Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="orderHistoryBody">
+              <tr><td colspan="5" style="color:var(--muted);text-align:center;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETPLACE PANEL -->
+    <div id="panel-marketplace" class="panel">
+      <div class="section-header">
+        <div class="section-title">Marketplace</div>
+        <button class="cart-float" onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</button>
+      </div>
+      <div id="marketplaceGrid" class="grid-3">
+        <div class="card-sub" style="color:var(--muted);font-size:13px;">Loading products...</div>
+      </div>
+    </div>
+
+    <!-- AI SECURITY ADVISOR PANEL -->
+    <div id="panel-chat" class="panel">
+      <div class="section-header">
+        <div>
+          <div class="section-title">AI Security Advisor</div>
+          <div style="font-size:13px;color:var(--muted);">Control-Grounded Advisor with AI Firewall Guardrail</div>
+        </div>
+        <span class="pill pill-emerald">AI Firewall Active</span>
+      </div>
+      <div class="card" style="max-width:860px;">
+        <div class="chat-box" id="chatBox"></div>
+        <div style="display:flex;gap:10px;">
+          <input id="chatInput" placeholder="Ask about ransomware, phishing, NIST controls..." style="margin:0;" onkeydown="if(event.key==='Enter')sendChat()" />
+          <button class="btn" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CISO REPORTS PANEL -->
+    <div id="panel-ciso" class="panel">
+      <div class="section-header">
+        <div>
+          <div class="section-title">CISO Reports</div>
+          <div style="font-size:13px;color:var(--muted);">Dispatched security audit reports and email outbox</div>
+        </div>
+        <button class="btn btn-emerald" onclick="runNewAudit()">▶ Run New Audit & Email Report</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:14px;margin-bottom:12px;">Dispatched CISO PDF Reports</h3>
+        <div id="cisoOutbox" style="color:var(--muted);font-size:13px;">Loading...</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- CART OVERLAY + SLIDE PANEL -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-panel" id="cartPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <h3 style="font-size:16px;">🛒 Secure Checkout</h3>
+    <button class="btn btn-outline btn-sm" onclick="closeCart()">✕</button>
+  </div>
+  <div id="cartItems" style="margin-bottom:16px;font-size:13px;color:var(--muted);">Cart is empty.</div>
+  <label>Payment Method</label>
+  <select id="payMethod">
+    <option value="Card">Encrypted Credit / Debit Card (TLS 1.3)</option>
+    <option value="Crypto">Cryptocurrency (USDT / BTC / ETH)</option>
+  </select>
+  <button class="btn btn-emerald" style="width:100%;margin-top:4px;" onclick="submitCheckout()">Complete Secure Purchase</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  const STATE = {
+    token: localStorage.getItem('cn_v5_token') || localStorage.getItem('cn_v4_token') || '',
+    csrf: localStorage.getItem('cn_v5_csrf') || localStorage.getItem('cn_v4_csrf') || '',
+    user: null,
+    products: [],
+    cart: [],
+  };
+
+  // ── Utilities ────────────────────────────────────────────────
+  function showToast(msg, color='var(--cyan)') {
+    const t = document.getElementById('toast');
+    t.style.borderLeftColor = color;
+    t.innerHTML = msg;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 5500);
+  }
+
+  async function api(path, method='GET', body=null) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (STATE.token) headers['Authorization'] = 'Bearer ' + STATE.token;
+    if (STATE.csrf) headers['X-CSRF-Token'] = STATE.csrf;
+    const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : null });
+    if (res.status === 401) { logout(); return null; }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Request failed' }));
+      throw new Error(err.detail || 'Error');
+    }
+    return res.json();
+  }
+
+  function logout() {
+    localStorage.removeItem('cn_v5_token'); localStorage.removeItem('cn_v5_csrf');
+    localStorage.removeItem('cn_v4_token'); localStorage.removeItem('cn_v4_csrf');
+    window.location.href = '/';
+  }
+
+  function switchPanel(name, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+    if (name === 'overview') loadOverview();
+    if (name === 'licenses') loadLicenses();
+    if (name === 'marketplace') loadMarketplace();
+    if (name === 'chat') loadChat();
+    if (name === 'ciso') loadCisoReports();
+    if (name === 'security') loadSecurityScore();
+  }
+
+  // ── Bootstrap / Init ─────────────────────────────────────────
+  async function init() {
+    if (!STATE.token) { window.location.href = '/'; return; }
+    try {
+      const data = await api('/api/bootstrap');
+      if (!data || !data.user) { window.location.href = '/'; return; }
+      STATE.user = data.user;
+      STATE.products = data.products;
+      document.getElementById('navUserName').textContent = data.user.full_name;
+      document.getElementById('welcomeMsg').textContent =
+        `Welcome back, ${data.user.full_name}! Your Zero-Trust session is active.`;
+      loadOverview(data);
+    } catch(e) { window.location.href = '/'; }
+  }
+
+  // ── Overview ──────────────────────────────────────────────────
+  async function loadOverview(bootstrapData) {
+    try {
+      const data = bootstrapData || await api('/api/bootstrap');
+      if (!data) return;
+      const score = data.user ? data.user.security_score : 65;
+      document.getElementById('kpiScore').textContent = score;
+
+      // Threat level
+      let level, color;
+      if (score < 60) { level = '🚨 CRITICAL'; color = 'var(--rose)'; }
+      else if (score < 80) { level = '⚠️ MODERATE'; color = 'var(--amber)'; }
+      else { level = '✅ HARDENED'; color = 'var(--emerald)'; }
+      document.getElementById('kpiThreat').innerHTML = `<span style="color:${color};font-size:16px;">${level}</span>`;
+      document.getElementById('kpiThreatSub').textContent = `Score ${score}/100`;
+
+      // Vault for counts
+      try {
+        const vault = await api('/api/vault');
+        if (vault) {
+          document.getElementById('kpiLicenses').textContent = vault.licenses ? vault.licenses.length : 0;
+          const open = vault.orders ? vault.orders.filter(o => o.status && o.status.includes('Flagged')).length : 0;
+          document.getElementById('kpiOrders').textContent = open;
+        }
+      } catch(e) {
+        document.getElementById('kpiLicenses').textContent = '—';
+        document.getElementById('kpiOrders').textContent = '—';
+      }
+
+      // Threats from last risk scan (use static placeholders since bootstrap may not have them)
+      const threats = data.last_threats || [];
+      if (threats.length > 0) {
+        document.getElementById('threatSummary').innerHTML = threats.slice(0,3).map(t => `
+          <div class="card-sub" style="margin-bottom:8px;">
+            <div style="font-weight:700;font-size:13px;">${t.vector || t.name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+              Likelihood: ${t.likelihood} &bull; ${t.mitigation ? t.mitigation.substring(0,80) : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Agent activity
+      const execs = data.recent_agent_executions || [];
+      document.getElementById('agentActivityBody').innerHTML = execs.length
+        ? execs.slice(0,5).map(ex => {
+            const vcls = verdictClass(ex.verdict);
+            return `<tr>
+              <td style="font-size:11px;">${ex.agent_name}</td>
+              <td style="font-size:11px;">${ex.trigger_event}</td>
+              <td><span class="pill ${vcls}">${ex.verdict}</span></td>
+              <td class="mono" style="font-size:11px;">${ex.created_at ? ex.created_at.substring(0,16) : '—'}</td>
+            </tr>`;
+          }).join('')
+        : '<tr><td colspan="4" style="color:var(--muted);text-align:center;font-size:12px;">No agent activity yet</td></tr>';
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  function verdictClass(v) {
+    if (!v) return 'pill-cyan';
+    v = v.toUpperCase();
+    if (v.includes('BLOCK') || v.includes('QUARANTINE') || v.includes('CRITICAL')) return 'pill-rose';
+    if (v.includes('ESCALAT') || v.includes('FLAG')) return 'pill-amber';
+    if (v.includes('PROVISION') || v.includes('ACTIVE') || v.includes('VALID')) return 'pill-emerald';
+    return 'pill-cyan';
+  }
+
+  // ── Security Score ────────────────────────────────────────────
+  async function loadSecurityScore() {
+    try {
+      const data = await api('/api/bootstrap');
+      if (!data) return;
+      const score = data.user ? data.user.security_score : 0;
+      document.getElementById('scoreGaugeVal').textContent = score;
+      let tier, tierCls;
+      if (score >= 85) { tier = 'HARDENED'; tierCls = 'pill-emerald'; }
+      else if (score >= 70) { tier = 'MODERATE'; tierCls = 'pill-amber'; }
+      else if (score >= 50) { tier = 'EXPOSED'; tierCls = 'pill-amber'; }
+      else { tier = 'CRITICAL RISK'; tierCls = 'pill-rose'; }
+      const badge = document.getElementById('scoreTierBadge');
+      badge.textContent = tier;
+      badge.className = 'pill ' + tierCls;
+    } catch(e) {}
+  }
+
+  async function runRiskScan() {
+    document.getElementById('securityOutput').innerHTML = '<span style="color:var(--cyan);">⟳ Running Autonomous Posture Scan...</span>';
+    try {
+      const res = await api('/api/ai/risk-analyzer', 'POST', {
+        firewall_active: document.getElementById('chkFirewall').checked,
+        mfa_enabled: document.getElementById('chkMfa').checked,
+        endpoint_encrypted: document.getElementById('chkEnc').checked,
+        siem_monitoring: document.getElementById('chkSiem').checked,
+        patch_cadence: document.getElementById('patchCadence').value,
+        email_report: false
+      });
+      const score = res.digital_security_score;
+      document.getElementById('scoreGaugeVal').textContent = score;
+      let tier, tierCls;
+      if (score >= 85) { tier = 'HARDENED'; tierCls = 'pill-emerald'; }
+      else if (score >= 70) { tier = 'MODERATE'; tierCls = 'pill-amber'; }
+      else if (score >= 50) { tier = 'EXPOSED'; tierCls = 'pill-amber'; }
+      else { tier = 'CRITICAL RISK'; tierCls = 'pill-rose'; }
+      document.getElementById('scoreTierBadge').textContent = tier;
+      document.getElementById('scoreTierBadge').className = 'pill ' + tierCls;
+
+      document.getElementById('securityOutput').innerHTML = `
+        <div class="card-sub" style="margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--muted);">AGENT TRACE</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--cyan);">${res.agent_execution ? res.agent_execution.reasoning_summary : ''}</div>
+          ${res.email_delivery ? `<div style="font-size:11px;color:var(--amber);margin-top:4px;">Email: ${res.email_delivery.delivery_mode} → ${res.email_delivery.recipient}</div>` : ''}
+        </div>
+        ${(res.threats || []).map(t => `
+          <div class="card-sub" style="margin-bottom:8px;">
+            <div style="font-weight:700;font-size:13px;">${t.vector}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">Likelihood: ${t.likelihood} &bull; Severity: ${t.severity}</div>
+            <div style="font-size:12px;color:var(--text);margin-top:4px;">${t.mitigation}</div>
+          </div>
+        `).join('')}
+      `;
+    } catch(e) { showToast(e.message, 'var(--rose)'); document.getElementById('securityOutput').innerHTML = `<span style="color:var(--rose);">${e.message}</span>`; }
+  }
+
+  async function downloadCisoPdf() {
+    const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + STATE.token };
+    try {
+      const res = await fetch('/api/ai/risk-analyzer/pdf', {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          firewall_active: document.getElementById('chkFirewall').checked,
+          mfa_enabled: document.getElementById('chkMfa').checked,
+          endpoint_encrypted: document.getElementById('chkEnc').checked,
+          siem_monitoring: document.getElementById('chkSiem').checked,
+          patch_cadence: document.getElementById('patchCadence').value
+        })
+      });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'CyberNova_CISO_Security_Audit.pdf'; a.click();
+      showToast('CISO Audit PDF downloaded!', 'var(--emerald)');
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  // ── Licenses ──────────────────────────────────────────────────
+  async function loadLicenses() {
+    try {
+      const data = await api('/api/vault');
+      if (!data) return;
+
+      const lc = document.getElementById('licenseCards');
+      lc.innerHTML = data.licenses && data.licenses.length
+        ? data.licenses.map(l => `
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-weight:700;font-size:13px;">${l.product_name}</span>
+              <span class="pill ${l.status && l.status.toLowerCase().includes('active') ? 'pill-emerald' : 'pill-amber'}">${l.status || 'ACTIVE'}</span>
+            </div>
+            <div class="mono" style="color:var(--cyan);font-size:12px;margin-bottom:8px;word-break:break-all;">${l.license_key}</div>
+            <div style="font-size:11px;color:var(--muted);">${l.license_term} &bull; Expires: ${l.expires_at || 'N/A'}</div>
+            <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="verifyCert('${l.signed_cert}')">Verify Certificate</button>
+          </div>
+        `).join('')
+        : '<div class="card-sub" style="color:var(--muted);font-size:13px;">No licenses found. Purchase from the Marketplace.</div>';
+
+      const ob = document.getElementById('orderHistoryBody');
+      ob.innerHTML = data.orders && data.orders.length
+        ? data.orders.map(o => `
+          <tr>
+            <td class="mono">${o.order_code}</td>
+            <td>$${o.total_amount.toFixed(2)}</td>
+            <td>${o.payment_method}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="width:60px;height:6px;border-radius:3px;background:var(--border);">
+                  <div style="width:${o.fraud_score}%;height:6px;border-radius:3px;background:${o.fraud_score >= 60 ? 'var(--rose)' : o.fraud_score >= 40 ? 'var(--amber)' : 'var(--emerald)'};"></div>
+                </div>
+                <span style="font-size:11px;">${o.fraud_score}/100</span>
+              </div>
+            </td>
+            <td><span class="pill ${o.status && o.status.includes('Flagged') ? 'pill-rose' : 'pill-emerald'}">${o.status}</span></td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="5" style="color:var(--muted);text-align:center;">No orders yet</td></tr>';
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  async function verifyCert(cert) {
+    try {
+      const res = await api('/api/licenses/verify', 'POST', { certificate_token: cert });
+      if (res && res.valid) {
+        showToast(`✓ VALID CERT: ${res.message} | SKU: ${res.payload.sku}`, 'var(--emerald)');
+      } else {
+        showToast(`✗ INVALID: ${res ? res.message : 'Verification failed'}`, 'var(--rose)');
+      }
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  // ── Marketplace ───────────────────────────────────────────────
+  async function loadMarketplace() {
+    try {
+      const data = await api('/api/bootstrap');
+      if (!data) return;
+      STATE.products = data.products;
+      renderProducts(data.products);
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  function renderProducts(list) {
+    document.getElementById('marketplaceGrid').innerHTML = list.map(p => `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span class="pill pill-cyan">${p.category}</span>
+          <span class="pill pill-emerald">${p.security_level}</span>
+        </div>
+        <h4 style="margin-bottom:6px;">${p.name}</h4>
+        <p style="color:var(--muted);font-size:12px;line-height:1.5;margin-bottom:12px;">${p.description}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><b>$${p.price.toFixed(2)}</b> <span style="font-size:11px;color:var(--muted);">/ ${p.license_term}</span></div>
+          <button class="btn btn-sm" onclick="addToCart(${p.id})">+ Add to Cart</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function addToCart(pid) {
+    const found = STATE.cart.find(x => x.product_id === pid);
+    if (found) found.quantity += 1;
+    else STATE.cart.push({ product_id: pid, quantity: 1 });
+    document.getElementById('cartCount').textContent = STATE.cart.reduce((s, x) => s + x.quantity, 0);
+    showToast('Added module to encrypted cart.');
+  }
+
+  function openCart() {
+    document.getElementById('cartPanel').classList.add('open');
+    document.getElementById('cartOverlay').classList.add('open');
+    renderCartItems();
+  }
+
+  function closeCart() {
+    document.getElementById('cartPanel').classList.remove('open');
+    document.getElementById('cartOverlay').classList.remove('open');
+  }
+
+  function renderCartItems() {
+    const el = document.getElementById('cartItems');
+    if (!STATE.cart.length) { el.innerHTML = 'Your cart is empty.'; return; }
+    let total = 0;
+    el.innerHTML = STATE.cart.map(c => {
+      const p = STATE.products.find(x => x.id === c.product_id);
+      if (!p) return '';
+      const sub = p.price * c.quantity;
+      total += sub;
+      return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span>${p.name} ×${c.quantity}</span><b>$${sub.toFixed(2)}</b>
+      </div>`;
+    }).join('') + `<div style="margin-top:12px;text-align:right;font-size:15px;">Total: <b>$${total.toFixed(2)}</b></div>`;
+  }
+
+  async function submitCheckout() {
+    if (!STATE.user) { showToast('Please sign in first.', 'var(--amber)'); return; }
+    if (!STATE.cart.length) { showToast('Your cart is empty.', 'var(--amber)'); return; }
+    try {
+      const res = await api('/api/orders/checkout', 'POST', {
+        items: STATE.cart,
+        payment_method: document.getElementById('payMethod').value
+      });
+      if (!res) return;
+      STATE.cart = [];
+      document.getElementById('cartCount').textContent = '0';
+      closeCart();
+      if (res.fraud_evaluation && res.fraud_evaluation.flagged) {
+        showToast(`⚠ Fraud Investigation Agent flagged ${res.order_code} (Score ${res.fraud_evaluation.fraud_score}/100) — HITL review required.`, 'var(--amber)');
+      } else {
+        showToast(`✓ Order ${res.order_code} provisioned! License minted & emailed.`, 'var(--emerald)');
+      }
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  // ── Chat ──────────────────────────────────────────────────────
+  async function loadChat() {
+    try {
+      const data = await api('/api/chat/history');
+      if (!data) return;
+      const box = document.getElementById('chatBox');
+      box.innerHTML = data.messages.map(m => `
+        <div class="chat-msg ${m.sender_role === 'user' ? 'user-msg' : ''}">
+          <div class="chat-bubble">
+            <div style="font-size:10px;color:var(--cyan);margin-bottom:4px;">${m.sender_role.toUpperCase()} · ${m.created_at || ''}</div>
+            ${m.message}
+          </div>
+        </div>
+      `).join('');
+      box.scrollTop = box.scrollHeight;
+    } catch(e) {}
+  }
+
+  async function sendChat() {
+    const inp = document.getElementById('chatInput');
+    const msg = inp.value.trim();
+    if (!msg) return;
+    inp.value = '';
+    try {
+      await api('/api/chat/send', 'POST', { message: msg, channel: 'ai' });
+      await loadChat();
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  // ── CISO Reports ──────────────────────────────────────────────
+  async function loadCisoReports() {
+    try {
+      const data = await api('/api/mail/outbox');
+      if (!data) return;
+      const emails = (data.emails || []).filter(e => e.category === 'CISO_PDF_REPORT' || e.subject && e.subject.includes('CISO'));
+      const el = document.getElementById('cisoOutbox');
+      el.innerHTML = emails.length
+        ? emails.map(e => `
+          <div class="card-sub" style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+              <b style="font-size:13px;">${e.subject}</b>
+              <span class="pill ${e.delivery_mode === 'REALTIME_SMTP_SENT' ? 'pill-emerald' : e.delivery_mode === 'RELAY' ? 'pill-cyan' : 'pill-rose'}">${e.delivery_mode}</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">To: ${e.recipient} &bull; ${e.created_at}</div>
+            ${e.error_detail ? `<div style="font-size:11px;color:var(--rose);margin-top:4px;">Error: ${e.error_detail}</div>` : ''}
+            <div style="font-size:12px;color:var(--muted);margin-top:6px;">${e.text_preview || ''}</div>
+          </div>
+        `).join('')
+        : '<div style="color:var(--muted);font-size:13px;">No CISO PDF reports dispatched yet. Run an audit to generate one.</div>';
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  async function runNewAudit() {
+    showToast('⟳ Running posture scan and emailing CISO PDF report...', 'var(--cyan)');
+    try {
+      const res = await api('/api/ai/risk-analyzer', 'POST', {
+        firewall_active: true, mfa_enabled: true, endpoint_encrypted: true,
+        siem_monitoring: false, patch_cadence: 'Monthly Scheduled', email_report: true
+      });
+      showToast(`✓ Audit complete (Score: ${res.digital_security_score}/100). PDF emailed!`, 'var(--emerald)');
+      loadCisoReports();
+    } catch(e) { showToast(e.message, 'var(--rose)'); }
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────
+  init();
+</script>
+</body>
+</html>

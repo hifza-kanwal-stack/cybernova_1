@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberNova | Admin SOC Command Center</title>
+  <style>
+    :root {
+      --bg: #070d19; --panel: #0e172a; --panel2: #131f38; --border: #1e293b;
+      --text: #e2e8f0; --muted: #94a3b8; --cyan: #06b6d4; --emerald: #10b981;
+      --amber: #f59e0b; --rose: #f43f5e; --indigo: #6366f1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* TOP BAR */
+    .topbar {
+      background: #050912; border-bottom: 1px solid var(--border);
+      padding: 10px 24px; display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 50; flex-shrink: 0;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .logo-box {
+      background: linear-gradient(135deg, var(--rose), #e11d48);
+      color: #fff; font-weight: 900; font-size: 15px; padding: 7px 11px;
+      border-radius: 8px; letter-spacing: 0.5px;
+    }
+    .topbar-title { font-weight: 700; font-size: 15px; color: var(--text); }
+    .topbar-title span { color: var(--rose); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .admin-name { font-size: 13px; color: var(--muted); }
+    .pill { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .pill-rose { background: rgba(244,63,94,0.18); color: var(--rose); border: 1px solid rgba(244,63,94,0.3); }
+    .pill-cyan { background: rgba(6,182,212,0.18); color: var(--cyan); }
+    .pill-emerald { background: rgba(16,185,129,0.18); color: var(--emerald); }
+    .pill-amber { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .pill-indigo { background: rgba(99,102,241,0.2); color: var(--indigo); border: 1px solid rgba(99,102,241,0.4); }
+
+    .btn {
+      border: none; padding: 8px 16px; border-radius: 8px;
+      font-weight: 700; cursor: pointer; font-size: 13px; transition: 0.2s; white-space: nowrap;
+    }
+    .btn-rose { background: var(--rose); color: #fff; }
+    .btn-rose:hover { background: #e11d48; }
+    .btn-emerald { background: var(--emerald); color: #03150e; }
+    .btn-emerald:hover { filter: brightness(1.1); }
+    .btn-cyan { background: var(--cyan); color: #04101a; }
+    .btn-cyan:hover { filter: brightness(1.1); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--cyan); color: var(--cyan); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* LAYOUT */
+    .layout { display: flex; flex: 1; min-height: 0; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 240px; min-width: 240px; background: var(--panel); border-right: 1px solid var(--border);
+      padding: 20px 0; display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 49px; height: calc(100vh - 49px); overflow-y: auto; flex-shrink: 0;
+    }
+    .sidebar-section { padding: 6px 16px 2px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-top: 8px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      cursor: pointer; border-left: 3px solid transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; transition: 0.15s; user-select: none;
+    }
+    .nav-item:hover { background: rgba(244,63,94,0.07); color: var(--text); }
+    .nav-item.active { background: rgba(244,63,94,0.12); border-left-color: var(--rose); color: #fff; }
+
+    /* MAIN CONTENT */
+    .main-content { flex: 1; overflow-y: auto; padding: 24px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* CARDS & GRIDS */
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+    .card-sub { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    
+    .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+    .kpi-title { font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; }
+    .kpi-val { font-size: 28px; font-weight: 800; margin-top: 6px; }
+
+    /* TABLES & FORMS */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(0,0,0,0.15); }
+    tr:hover td { background: rgba(255,255,255,0.015); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+    input, select, textarea {
+      width: 100%; background: #080f1e; border: 1px solid var(--border); color: var(--text);
+      padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 6px; margin-bottom: 14px;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--cyan); }
+    label { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; background: #0f172a; border-left: 4px solid var(--cyan);
+      color: #fff; padding: 14px 18px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      z-index: 200; max-width: 420px; display: none; font-size: 13px; line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-box">CN</div>
+      <div class="topbar-title">CyberNova <span>Admin SOC</span> Command Center</div>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-name" id="adminName">Admin Session</div>
+      <span class="pill pill-rose">SYSTEM ADMIN</span>
+      <a href="/" class="btn btn-outline btn-sm">Public Portal</a>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section">SOC Operations</div>
+      <div class="nav-item active" onclick="switchNav('soc', this)">🎛️ Command Center</div>
+      <div class="nav-item" onclick="switchNav('fraud', this)">🚨 HITL Fraud Queue</div>
+      <div class="nav-item" onclick="switchNav('agents', this)">🤖 Agent Mesh Logs</div>
+      <div class="nav-item" onclick="switchNav('security', this)">🛡️ Security &amp; AI Logs</div>
+
+      <div class="sidebar-section">Enterprise Admin</div>
+      <div class="nav-item" onclick="switchNav('users', this)">👥 User Directory</div>
+      <div class="nav-item" onclick="switchNav('revenue', this)">📊 Revenue Analytics</div>
+      <div class="nav-item" onclick="switchNav('mail', this)">📧 Real-Time Mail &amp; SMTP</div>
+      <div class="nav-item" onclick="switchNav('settings', this)">⚙️ System &amp; Root-CA</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+      <!-- PANEL 1: COMMAND CENTER -->
+      <div id="panel-soc" class="panel active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <h2>Autonomous Multi-Agent SOC Overview</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px;">Live surveillance across all enterprise actors, threat containment, and revenue streams.</p>
+          </div>
+          <button class="btn btn-cyan btn-sm" onclick="loadAll()">Refresh SOC Data</button>
+        </div>
+
+        <div class="grid-4" id="kpiGrid">
+          <div class="kpi-card">
+            <div class="kpi-title">Total Orders</div>
+            <div class="kpi-val" id="kpiOrders">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Provisioned Revenue</div>
+            <div class="kpi-val" style="color:var(--emerald);" id="kpiRevenue">$0.00</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Quarantined Fraud Orders</div>
+            <div class="kpi-val" style="color:var(--rose);" id="kpiFraud">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Autonomous Agent Runs</div>
+            <div class="kpi-val" style="color:var(--cyan);" id="kpiAgents">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:12px;">Autonomous Agent Fleet Status</h3>
+          <div class="grid-2" id="fleetStatusGrid" style="margin-bottom:0;"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:12px;">Recent High-Priority Security Events</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Event Type</th>
+                  <th>Actor</th>
+                  <th>Severity</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="recentSecLogsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 2: HITL FRAUD QUEUE -->
+      <div id="panel-fraud" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <h2>Human-in-the-Loop (HITL) AI Fraud Triage</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px;">Orders quarantined by Fraud Investigation Agent (Risk &ge; 60/100) require Admin sign-off.</p>
+          </div>
+          <button class="btn btn-cyan btn-sm" onclick="loadSoc()">Refresh Queue</button>
+        </div>
+
+        <div class="card" style="border-color:var(--rose);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3 style="color:var(--rose);">Quarantined Orders Requiring Immediate Decision</h3>
+            <span class="pill pill-rose" id="quarantineCountBadge">0 Quarantined</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order Code</th>
+                  <th>Customer Email</th>
+                  <th>Amount / Rail</th>
+                  <th>AI Fraud Score</th>
+                  <th>Detection Signals</th>
+                  <th>HITL Clearance</th>
+                </tr>
+              </thead>
+              <tbody id="flaggedOrdersBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:12px;">All Historical Orders &amp; Provisioning Ledger</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order Code</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Payment Rail</th>
+                  <th>Fraud Risk</th>
+                  <th>Status</th>
+                  <th>Created At</th>
+                </tr>
+              </thead>
+              <tbody id="allOrdersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 3: AGENTS -->
+      <div id="panel-agents" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <h2>Autonomous Agent Executions &amp; Inter-Agent Handoffs</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px;">Full execution audit trail of reasoning, tools invoked, and zero-trust verdicts.</p>
+          </div>
+          <button class="btn btn-cyan btn-sm" onclick="loadSoc()">Refresh Feeds</button>
+        </div>
+
+        <div class="card">
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Agent Name</th>
+                  <th>Actor Trigger</th>
+                  <th>Tools Invoked</th>
+                  <th>Verdict / Handoff</th>
+                  <th>Reasoning Summary</th>
+                </tr>
+              </thead>
+              <tbody id="allAgentExecBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 4: SECURITY LOGS -->
+      <div id="panel-security" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <h2>Security Events &amp; AI Firewall Guardrail Audit</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px;">OWASP Top-10 LLM prompt injection blocks, brute-force anomalies, and auth audits.</p>
+          </div>
+          <button class="btn btn-cyan btn-sm" onclick="loadSoc()">Refresh Logs</button>
+        </div>
+
+        <div class="card">
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Event Type</th>
+                  <th>Actor Identifier</th>
+                  <th>Severity</th>
+                  <th>Diagnostic Details</th>
+                </tr>
+              </thead>
+              <tbody id="allSecurityLogsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 5: USERS -->
+      <div id="panel-users" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <h2>Enterprise User Directory &amp; RBAC Scopes</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px;">Roles, Zero-Trust security scores, and authentication statuses.</p>
+          </div>
+          <button class="btn btn-cyan btn-sm" onclick="loadUsers()">Refresh Users</button>
+        </div>
+
+        <div class="card">
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Organization</th>
+                  <th>2FA Enabled</th>
+                  <th>Security Score</th>
+                  <th>Failed Logins</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 6: REVENUE -->
+      <div id="panel-revenue" class="panel">
+        <div style="margin-bottom:20px;">
+          <h2>Revenue &amp; Product Performance Analytics</h2>
+          <p style="color:var(--muted);font-size:13px;margin-top:2px;">Category performance and order processing metrics.</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-bottom:12px;">Category Distribution &amp; Average Pricing</h3>
+            <div id="categoryStatsList"></div>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:12px;">Payment Rail Breakdown</h3>
+            <div id="paymentRailStats" style="margin-top:14px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 7: REAL-TIME MAIL & SMTP -->
+      <div id="panel-mail" class="panel">
+        <div style="margin-bottom:20px;">
+          <h2>Real-Time Gmail SMTP Configuration &amp; Live Outbox</h2>
+          <p style="color:var(--muted);font-size:13px;margin-top:2px;">Configure credentials for live delivery of 2FA OTP codes, CISO Audit PDFs, and SOC fraud alerts.</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-bottom:12px;">Connect Real Gmail SMTP</h3>
+            <div class="card-sub" style="font-size:12px;margin-bottom:14px;line-height:1.5;">
+              Use a 16-character Google App Password from <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--cyan);">myaccount.google.com/apppasswords</a>.<br/>
+              <b>Zero-Trust Notice:</b> Credentials are saved directly to server environment variables and never logged or exposed.
+            </div>
+            <label>Gmail Address</label>
+            <input id="smtpUser" placeholder="name@gmail.com" />
+            <label>Google 16-Character App Password</label>
+            <input id="smtpPass" type="password" placeholder="xxxx xxxx xxxx xxxx" />
+            <button class="btn btn-emerald" style="width:100%;margin-top:6px;" onclick="saveSmtpConfig()">Save SMTP &amp; Send Live Test</button>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom:12px;">SMTP Connection Status</h3>
+            <div id="smtpStatusBox" class="card-sub" style="margin-bottom:14px;">Checking status...</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.5;">
+              When SMTP is active, 6-digit 2FA verification codes are dispatched directly to the customer's real email inbox, and CISO PDFs are delivered with TLS encryption.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3>Live Dispatched Email Outbox Audit</h3>
+            <button class="btn btn-outline btn-sm" onclick="loadMailOutbox()">Refresh Outbox</button>
+          </div>
+          <div id="emailOutboxList" style="max-height:360px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <!-- PANEL 8: SYSTEM SETTINGS -->
+      <div id="panel-settings" class="panel">
+        <div style="margin-bottom:20px;">
+          <h2>System Infrastructure &amp; Root-CA Diagnostics</h2>
+          <p style="color:var(--muted);font-size:13px;margin-top:2px;">Cryptographic certificate verification, server health, and environment status.</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-bottom:12px;">Root-CA Certificate Inspector</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Test full 64-character HMAC-SHA256 signature verification.</p>
+            <textarea id="testCertInput" rows="3" placeholder="Paste cnv1.<base64-payload>.<hmac-sha256-signature> token here..."></textarea>
+            <button class="btn btn-cyan" onclick="verifyCertDirect()">Verify Signature</button>
+            <div id="certVerifyResult" style="margin-top:12px;font-size:13px;"></div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom:12px;">Server Health Status</h3>
+            <div id="healthStatusBox" class="card-sub" style="line-height:1.6;font-size:13px;">Loading healthz...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let TOKEN = localStorage.getItem('cn_v5_token') || localStorage.getItem('cn_v4_token') || '';
+    let CSRF = localStorage.getItem('cn_v5_csrf') || localStorage.getItem('cn_v4_csrf') || '';
+    let SOC_DATA = null;
+
+    function showToast(msg, color='var(--cyan)') {
+      const t = document.getElementById('toast');
+      t.style.borderLeftColor = color;
+      t.innerHTML = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 5500);
+    }
+
+    function switchNav(id, el) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('panel-' + id).classList.add('active');
+      if (el) el.classList.add('active');
+      if (id === 'mail') loadMailOutbox();
+      if (id === 'users') loadUsers();
+      if (id === 'settings') loadHealth();
+    }
+
+    async function api(path, method='GET', body=null) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+      if (CSRF) headers['X-CSRF-Token'] = CSRF;
+      const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : null });
+      if (res.status === 401) {
+        localStorage.removeItem('cn_v5_token');
+        localStorage.removeItem('cn_v4_token');
+        window.location.href = '/';
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Request failed' }));
+        throw new Error(err.detail || 'Error');
+      }
+      return res.json();
+    }
+
+    async function init() {
+      try {
+        const boot = await api('/api/bootstrap');
+        if (!boot.user || boot.user.role !== 'admin') {
+          alert('Admin access required. Redirecting to home...');
+          window.location.href = '/';
+          return;
+        }
+        document.getElementById('adminName').innerText = boot.user.full_name;
+        if (boot.smtp_status) {
+          document.getElementById('smtpUser').value = boot.smtp_status.smtp_user || '';
+        }
+        await loadAll();
+      } catch (e) {
+        showToast('Init error: ' + e.message, 'var(--rose)');
+      }
+    }
+
+    async function loadAll() {
+      await loadSoc();
+      await loadAgents();
+    }
+
+    async function loadSoc() {
+      try {
+        SOC_DATA = await api('/api/admin/soc');
+        // KPIs
+        document.getElementById('kpiOrders').innerText = SOC_DATA.kpis.total_orders;
+        document.getElementById('kpiRevenue').innerText = '$' + SOC_DATA.kpis.provisioned_revenue.toFixed(2);
+        document.getElementById('kpiFraud').innerText = SOC_DATA.kpis.flagged_fraud_orders;
+        document.getElementById('kpiAgents').innerText = SOC_DATA.kpis.agent_executions_count;
+
+        // Quarantined vs Approved Orders
+        const flagged = SOC_DATA.orders.filter(o => o.status.includes('Flagged') || o.status.includes('Quarantined'));
+        document.getElementById('quarantineCountBadge').innerText = `${flagged.length} Quarantined`;
+        
+        document.getElementById('flaggedOrdersBody').innerHTML = flagged.length ? flagged.map(o => `
+          <tr style="background:rgba(244,63,94,0.06);">
+            <td><b class="mono">${o.order_code}</b></td>
+            <td>${o.user_email}</td>
+            <td><b>$${o.total_amount.toFixed(2)}</b><br/><span style="font-size:11px;color:var(--muted);">${o.payment_method}</span></td>
+            <td><span class="pill pill-rose">${o.fraud_score}/100 Risk</span></td>
+            <td style="font-size:12px;color:var(--muted);">${JSON.parse(o.fraud_reasons || '[]').join(', ')}</td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-emerald btn-sm" onclick="decideOrder('${o.order_code}','APPROVE')">Clear (Approve)</button>
+                <button class="btn btn-rose btn-sm" onclick="decideOrder('${o.order_code}','BLOCK')">Block Order</button>
+              </div>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--emerald);padding:18px;">No orders currently quarantined in HITL queue.</td></tr>';
+
+        // All Orders
+        document.getElementById('allOrdersBody').innerHTML = SOC_DATA.orders.map(o => `
+          <tr>
+            <td class="mono"><b>${o.order_code}</b></td>
+            <td>${o.user_email}</td>
+            <td>$${o.total_amount.toFixed(2)}</td>
+            <td>${o.payment_method}</td>
+            <td><span class="pill ${o.fraud_score >= 60 ? 'pill-rose' : 'pill-emerald'}">${o.fraud_score}/100</span></td>
+            <td><span class="pill ${o.status.includes('Provisioned') ? 'pill-emerald' : 'pill-rose'}">${o.status}</span></td>
+            <td class="mono" style="font-size:11px;color:var(--muted);">${o.created_at}</td>
+          </tr>
+        `).join('');
+
+        // Security Logs
+        document.getElementById('allSecurityLogsBody').innerHTML = SOC_DATA.security_logs.map(l => `
+          <tr>
+            <td class="mono" style="font-size:11px;color:var(--muted);">${l.created_at}</td>
+            <td><b>${l.event_type}</b></td>
+            <td class="mono">${l.actor}</td>
+            <td><span class="pill ${l.severity === 'CRITICAL' ? 'pill-rose' : (l.severity === 'WARN' ? 'pill-amber' : 'pill-cyan')}">${l.severity}</span></td>
+            <td style="font-size:12px;">${l.detail}</td>
+          </tr>
+        `).join('');
+
+        // Recent mini sec logs
+        document.getElementById('recentSecLogsBody').innerHTML = SOC_DATA.security_logs.slice(0, 5).map(l => `
+          <tr>
+            <td class="mono" style="font-size:11px;color:var(--muted);">${l.created_at}</td>
+            <td><b>${l.event_type}</b></td>
+            <td>${l.actor}</td>
+            <td><span class="pill ${l.severity === 'CRITICAL' ? 'pill-rose' : (l.severity === 'WARN' ? 'pill-amber' : 'pill-cyan')}">${l.severity}</span></td>
+            <td style="font-size:12px;">${l.detail}</td>
+          </tr>
+        `).join('');
+
+        // Agent Executions
+        document.getElementById('allAgentExecBody').innerHTML = SOC_DATA.agent_executions.map(ex => `
+          <tr>
+            <td class="mono" style="font-size:11px;color:var(--muted);">${ex.created_at}</td>
+            <td><b>${ex.agent_name}</b></td>
+            <td>${ex.actor}<br/><span class="pill pill-cyan" style="font-size:10px;">${ex.trigger_event}</span></td>
+            <td class="mono" style="font-size:11px;">${JSON.parse(ex.tools_invoked || '[]').join(', ')}</td>
+            <td><span class="pill pill-emerald">${ex.verdict}</span><br/><span style="font-size:10px;color:var(--amber);">Handoff: ${ex.handoff_target}</span></td>
+            <td style="font-size:12px;color:var(--muted);">${ex.reasoning_summary}</td>
+          </tr>
+        `).join('');
+
+        // Category Stats
+        if (SOC_DATA.category_stats) {
+          document.getElementById('categoryStatsList').innerHTML = SOC_DATA.category_stats.map(c => `
+            <div class="card-sub" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <b>${c.category}</b>
+                <div style="font-size:11px;color:var(--muted);">${c.cnt} Active Modules</div>
+              </div>
+              <div style="text-align:right;">
+                <b style="color:var(--cyan);">$${c.avg_price.toFixed(2)}</b>
+                <div style="font-size:11px;color:var(--muted);">Avg Price</div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Payment stats
+        const cardOrders = SOC_DATA.orders.filter(o => o.payment_method.toLowerCase().includes('card')).length;
+        const cryptoOrders = SOC_DATA.orders.filter(o => o.payment_method.toLowerCase().includes('crypto')).length;
+        document.getElementById('paymentRailStats').innerHTML = `
+          <div class="card-sub" style="margin-bottom:10px;display:flex;justify-content:space-between;">
+            <span>Encrypted Card (TLS 1.3)</span><b>${cardOrders} Orders</b>
+          </div>
+          <div class="card-sub" style="display:flex;justify-content:space-between;">
+            <span>Cryptocurrency (USDT/BTC/ETH)</span><b style="color:var(--amber);">${cryptoOrders} Orders</b>
+          </div>
+        `;
+      } catch (e) {
+        showToast('Error loading SOC: ' + e.message, 'var(--rose)');
+      }
+    }
+
+    async function loadAgents() {
+      try {
+        const boot = await api('/api/bootstrap');
+        const reg = boot.agent_registry || [];
+        document.getElementById('fleetStatusGrid').innerHTML = reg.map(a => `
+          <div class="card-sub">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <b style="color:var(--cyan);">${a.name}</b>
+              <span class="pill pill-emerald">ONLINE</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Actor Scope: ${a.actor}</div>
+            <div style="font-size:12px;margin-top:6px;color:var(--text);">${a.mission}</div>
+            <div class="mono" style="font-size:11px;color:var(--muted);margin-top:8px;">${a.autonomous_tools.join(' &bull; ')}</div>
+          </div>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function loadUsers() {
+      try {
+        const users = await api('/api/admin/users');
+        document.getElementById('usersTableBody').innerHTML = users.map(u => `
+          <tr>
+            <td class="mono">${u.id}</td>
+            <td><b>${u.full_name}</b></td>
+            <td>${u.email}</td>
+            <td><span class="pill ${u.role === 'admin' ? 'pill-rose' : (u.role === 'consultant' ? 'pill-indigo' : 'pill-cyan')}">${u.role.toUpperCase()}</span></td>
+            <td>${u.organization}</td>
+            <td>${u.two_fa_enabled ? '<span class="pill pill-emerald">Enforced</span>' : '<span class="pill pill-amber">Off</span>'}</td>
+            <td><b>${u.security_score}/100</b></td>
+            <td>${u.failed_logins}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        showToast('Error loading users: ' + e.message, 'var(--rose)');
+      }
+    }
+
+    async function loadMailOutbox() {
+      try {
+        const data = await api('/api/mail/outbox');
+        document.getElementById('smtpStatusBox').innerHTML = data.smtp_configured
+          ? `<span class="pill pill-emerald">CONNECTED</span> Active user: <b>${data.smtp_user}</b>`
+          : `<span class="pill pill-amber">LOCAL RELAY</span> Connect Gmail SMTP below for live inbox delivery.`;
+
+        document.getElementById('emailOutboxList').innerHTML = data.emails.map(m => `
+          <div class="card-sub" style="margin-bottom:8px;font-size:12px;">
+            <div style="display:flex;justify-content:space-between;">
+              <b>${m.subject}</b>
+              <span class="pill ${m.delivery_mode === 'REALTIME_SMTP_SENT' ? 'pill-emerald' : 'pill-rose'}">${m.delivery_mode}</span>
+            </div>
+            <div style="color:var(--muted);margin-top:4px;">To: ${m.recipient} &bull; ${m.created_at}</div>
+            ${m.error_detail ? `<div style="color:var(--rose);margin-top:4px;">${m.error_detail}</div>` : ''}
+            <div style="margin-top:4px;color:var(--text);">${m.text_preview}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        showToast('Error loading mail outbox: ' + e.message, 'var(--rose)');
+      }
+    }
+
+    async function saveSmtpConfig() {
+      const user = document.getElementById('smtpUser').value.trim();
+      const pass = document.getElementById('smtpPass').value.trim();
+      if (!user || !pass) {
+        showToast('Please enter both Gmail address and 16-character App Password', 'var(--amber)');
+        return;
+      }
+      try {
+        const res = await api('/api/mail/configure', 'POST', { smtp_user: user, smtp_pass: pass });
+        if (res.test_delivery && res.test_delivery.smtp_live) {
+          showToast('Real Gmail SMTP successfully connected & test mail delivered!', 'var(--emerald)');
+        } else {
+          showToast('SMTP credentials saved. Note: ' + (res.test_delivery?.error || 'Check connectivity'), 'var(--amber)');
+        }
+        await loadMailOutbox();
+      } catch (e) {
+        showToast('Failed to configure SMTP: ' + e.message, 'var(--rose)');
+      }
+    }
+
+    async function decideOrder(orderCode, decision) {
+      try {
+        await api(`/api/admin/orders/${orderCode}/decision`, 'POST', { decision });
+        showToast(`HITL clearance '${decision}' executed for ${orderCode}`, 'var(--emerald)');
+        await loadSoc();
+      } catch (e) {
+        showToast('Decision failed: ' + e.message, 'var(--rose)');
+      }
+    }
+
+    async function verifyCertDirect() {
+      const token = document.getElementById('testCertInput').value.trim();
+      if (!token) return;
+      try {
+        const res = await api('/api/licenses/verify', 'POST', { certificate_token: token });
+        document.getElementById('certVerifyResult').innerHTML = res.valid
+          ? `<div class="card-sub" style="border-color:var(--emerald);color:var(--emerald);"><b>VALID:</b> ${res.message}<br/>SKU: ${res.payload.sku} | Holder: ${res.payload.holder} | Expires: ${res.payload.exp}</div>`
+          : `<div class="card-sub" style="border-color:var(--rose);color:var(--rose);"><b>TAMPER / INVALID:</b> ${res.message}</div>`;
+      } catch (e) {
+        showToast(e.message, 'var(--rose)');
+      }
+    }
+
+    async function loadHealth() {
+      try {
+        const h = await api('/healthz');
+        document.getElementById('healthStatusBox').innerHTML = `
+          <b>Status:</b> <span class="pill pill-emerald">${h.status.toUpperCase()}</span><br/>
+          <b>Service:</b> ${h.service}<br/>
+          <b>Active Autonomous Agents:</b> ${h.agents_active} Online<br/>
+          <b>Time:</b> ${new Date().toISOString()}
+        `;
+      } catch (e) {
+        document.getElementById('healthStatusBox').innerHTML = `<span style="color:var(--rose);">Health check failed</span>`;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('cn_v5_token');
+      localStorage.removeItem('cn_v4_token');
+      localStorage.removeItem('cn_v5_csrf');
+      localStorage.removeItem('cn_v4_csrf');
+      window.location.href = '/';
+    }
+
+    init();
+    setInterval(loadSoc, 12000);
+  </script>
+</body>
+</html>
