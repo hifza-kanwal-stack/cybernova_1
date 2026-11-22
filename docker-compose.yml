@@ -1,0 +1,23 @@
+services:
+  cybernova-soc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cybernova-solutions:latest
+    container_name: cybernova-soc-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ALLOWED_ORIGINS=*
+      - CYBERNOVA_ROOT_CA_SECRET=CyberNova-FDE-RootCA-2026-SecretKey
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM_NAME=CyberNova Autonomous SOC
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
